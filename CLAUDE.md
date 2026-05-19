@@ -1,4 +1,4 @@
-# yomutan 開発ガイドライン (Actionable Rules)
+# marketing-support 開発ガイドライン (Actionable Rules)
 
 ## 実装フロー (Feature Implementation Flow)
 新規機能追加時は以下の順序で作成すること。
@@ -40,3 +40,27 @@
 ## 参照資料
 - バックエンドの設計ルール・フォルダ構造 : `docs/architecture.md`
 - フロントエンドの開発ガイドライン : `docs/frontend-guidelines.md`
+
+## Claude Code Skills (AI アシスタント連携)
+
+以下のスキルが `.claude/skills/` に定義されている。
+
+| Skill | 用途 |
+|---|---|
+| `data-collector` | Webから生データを収集しDBへ保存 |
+| `framework-drafter` | 上流FW・生データからサブ要素を下書き |
+| `dependency-tracer` | 上流の充足状況・下流への影響を追跡 |
+| `version-differ` | バージョン間の差分を要約 |
+| `freshness-auditor` | 鮮度切れ生データの点検 |
+| `framework-validator` | フレームワークの充足度チェック |
+
+## CLI スクリプト (.claude/scripts/)
+
+| スクリプト | 用途 |
+|---|---|
+| `list-projects.ts` | プロジェクト一覧取得 |
+| `save-raw-data.ts` | 生データをDBへ保存 |
+| `load-framework.ts` | フレームワークエントリを取得 |
+| `save-framework.ts` | フレームワークエントリを保存 |
+| `list-raw-data.ts` | 生データ一覧取得 |
+| `check-freshness.ts` | 鮮度切れデータのチェック |

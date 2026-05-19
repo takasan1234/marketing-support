@@ -1,12 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import Page from './page';
+
+vi.mock("@/lib/api-client", () => ({
+  getProjects: vi.fn().mockResolvedValue([]),
+}));
 
 describe('Page', () => {
-  it('renders the landing content', () => {
-    render(<Page />);
+  it('renders the project list heading', async () => {
+    const { default: Page } = await import('./page');
+    const ui = await Page();
+    render(ui);
 
-    expect(screen.getByText('Project ready!')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Button' })).toBeInTheDocument();
+    expect(screen.getByText('マーケティング支援ツール')).toBeInTheDocument();
+    expect(screen.getByText('プロジェクトがまだありません。')).toBeInTheDocument();
   });
 });

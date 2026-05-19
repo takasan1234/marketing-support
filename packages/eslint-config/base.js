@@ -22,6 +22,11 @@ export const config = [
     },
     rules: {
       "turbo/no-undeclared-env-vars": "warn",
+      // _ プレフィックスの引数は「意図的に未使用」の慣習として許可する
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       // Barrel Pattern: 外部パッケージは package.json の公開エントリ経由のみ許可。
       // 深い相対パス (例: @workspace/database/src/...) を import するのを禁止する。
       // 同一パッケージ内の越境 (例: presentation -> application/commands/foo.use-case)

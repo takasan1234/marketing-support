@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,10 +6,107 @@ datasource db {
   provider = "postgresql"
 }
 
-// model User {
-//   id        String   @id @default(cuid())
-//   email     String   @unique
-//   name      String?
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  frameworkEntries FrameworkEntry[]
+  rawData          RawData[]
+}
+
+model FrameworkEntry {
+  id            String        @id @default(cuid())
+  projectId     String
+  frameworkType FrameworkType
+  version       Int           @default(1)
+  isLatest      Boolean       @default(true)
+  data          Json
+  note          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  project   Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  dataLinks FrameworkRawDataLink[]
+
+  @@unique([projectId, frameworkType, version])
+  @@index([projectId, frameworkType, isLatest])
+}
+
+model RawData {
+  id          String      @id @default(cuid())
+  projectId   String
+  type        RawDataType
+  title       String
+  content     String
+  sourceUrl   String?
+  sourceNote  String?
+  collectedAt DateTime    @default(now())
+  expiresAt   DateTime?
+  tags        String[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  project Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  links   FrameworkRawDataLink[]
+
+  @@index([projectId, type])
+  @@index([projectId, expiresAt])
+}
+
+model FrameworkRawDataLink {
+  id               String  @id @default(cuid())
+  frameworkEntryId String
+  rawDataId        String
+  subElementId     String?
+  note             String?
+  createdAt        DateTime @default(now())
+
+  frameworkEntry FrameworkEntry @relation(fields: [frameworkEntryId], references: [id], onDelete: Cascade)
+  rawData        RawData        @relation(fields: [rawDataId], references: [id], onDelete: Cascade)
+
+  @@unique([frameworkEntryId, rawDataId, subElementId])
+}
+
+enum FrameworkType {
+  PEST
+  FIVE_FORCES
+  INTERNAL_ANALYSIS
+  VRIO
+  THREE_C_PLUS_C
+  SWOT
+  CROSS_SWOT
+  SEGMENTATION
+  TARGETING
+  POSITIONING
+  CONCEPT_SHEET
+  PRODUCT_4P
+  PRICE_4P
+  PLACE_4P
+  PROMOTION_4P
+  FOUR_C_SEVEN_P
+  BLUE_OCEAN
+  EXPERIENCE_VALUE
+  VALUE_ADD_METHODS
+  KGI_KSF_KPI
+  CUSTOMER_JOURNEY
+  CRM_OVERVIEW
+  CRM_ANALYSIS
+}
+
+enum RawDataType {
+  MARKET_STATS
+  INDUSTRY_REPORT
+  NEWS
+  CUSTOMER_RESEARCH
+  SNS_ANALYTICS
+  SEARCH_TRENDS
+  LOCATION_DATA
+  SALES_DATA
+  COMPETITOR_INFO
+  PARTNER_HEARING
+  FINANCIAL_DATA
+  EXPERT_HEARING
+}

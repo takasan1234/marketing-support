@@ -17,15 +17,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^17.4.2",
     "@apidevtools/swagger-parser": "^12.1.0",
     "@workspace/database": "workspace:^",
     "@workspace/domain": "workspace:^",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/supertest": "^7.2.0",
     "@types/swagger-ui-express": "^4.1.8",

@@ -1,5 +1,5 @@
 {
-  "name": "yomutan",
+  "name": "marketing-support",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -9,6 +9,9 @@
     "format": "turbo format",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "db:migrate": "pnpm --filter @workspace/database prisma migrate dev",
+    "db:studio": "pnpm --filter @workspace/database prisma studio",
+    "db:generate": "pnpm --filter @workspace/database prisma generate",
     "prepare": "husky"
   },
   "devDependencies": {

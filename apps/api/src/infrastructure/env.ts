@@ -1,4 +1,11 @@
+import { config } from "dotenv";
+import { resolve } from "path";
 import { z } from "zod";
+
+// env.ts が最初に import された時点で .env を読み込む
+// __dirname = apps/api/src/infrastructure/ → 4段上がるとモノレポルート
+config({ path: resolve(__dirname, "../../../../.env") });
+config(); // ローカル .env へのフォールバック
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8080),
