@@ -46,6 +46,7 @@ export function RawDataLinker({
       const data = await listRawData(projectId);
       setRawDataList(data);
     } catch {
+      setLinkError("生データの読み込みに失敗しました。再試行してください。");
       setRawDataList([]);
     } finally {
       setIsLoading(false);

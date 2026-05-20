@@ -137,7 +137,7 @@ export class FrameworkEntryPrismaRepository
     const record = await this.prisma.frameworkEntry.findFirst({
       where: {
         projectId,
-        frameworkType: frameworkType as unknown as PrismaFrameworkType,
+        frameworkType: DOMAIN_TO_PRISMA_FRAMEWORK_TYPE[frameworkType],
         isLatest: true,
       },
     });
@@ -152,7 +152,7 @@ export class FrameworkEntryPrismaRepository
     const records = await this.prisma.frameworkEntry.findMany({
       where: {
         projectId,
-        frameworkType: frameworkType as unknown as PrismaFrameworkType,
+        frameworkType: DOMAIN_TO_PRISMA_FRAMEWORK_TYPE[frameworkType],
       },
       orderBy: { version: "desc" },
     });
@@ -173,7 +173,7 @@ export class FrameworkEntryPrismaRepository
     const result = await this.prisma.frameworkEntry.aggregate({
       where: {
         projectId,
-        frameworkType: frameworkType as unknown as PrismaFrameworkType,
+        frameworkType: DOMAIN_TO_PRISMA_FRAMEWORK_TYPE[frameworkType],
       },
       _max: { version: true },
     });
@@ -189,7 +189,7 @@ export class FrameworkEntryPrismaRepository
     const record = await this.prisma.frameworkEntry.findFirst({
       where: {
         projectId,
-        frameworkType: frameworkType as unknown as PrismaFrameworkType,
+        frameworkType: DOMAIN_TO_PRISMA_FRAMEWORK_TYPE[frameworkType],
         version,
       },
     });
