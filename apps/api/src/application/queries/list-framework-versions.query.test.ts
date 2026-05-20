@@ -24,8 +24,10 @@ describe("ListFrameworkVersionsQuery", () => {
       delete: vi.fn(),
       findLatest: vi.fn(),
       findAllVersions: vi.fn().mockResolvedValue(entities),
+      findByVersion: vi.fn(),
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
+      createNextVersion: vi.fn(),
     };
     const query = new ListFrameworkVersionsQuery(repo);
 
@@ -46,8 +48,10 @@ describe("ListFrameworkVersionsQuery", () => {
       delete: vi.fn(),
       findLatest: vi.fn(),
       findAllVersions: vi.fn().mockResolvedValue([]),
+      findByVersion: vi.fn(),
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
+      createNextVersion: vi.fn(),
     };
     const query = new ListFrameworkVersionsQuery(repo);
 

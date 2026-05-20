@@ -53,6 +53,10 @@ export class RawDataController {
   get = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
     try {
       const rawData = await this.getRawDataQuery.execute({ id: req.params.id });
+      if (rawData.projectId !== req.params.projectId) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
       res.json(rawData);
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -65,6 +69,11 @@ export class RawDataController {
 
   update = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
     try {
+      const current = await this.getRawDataQuery.execute({ id: req.params.id });
+      if (current.projectId !== req.params.projectId) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
       const parsed = UpdateRawDataSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ error: parsed.error.flatten() });
@@ -86,6 +95,11 @@ export class RawDataController {
 
   delete = async (req: Request<{ projectId: string; id: string }>, res: Response): Promise<void> => {
     try {
+      const current = await this.getRawDataQuery.execute({ id: req.params.id });
+      if (current.projectId !== req.params.projectId) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
       await this.deleteRawDataCommand.execute({ id: req.params.id });
       res.status(204).send();
     } catch (error) {

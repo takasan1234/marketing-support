@@ -3,6 +3,36 @@ import { RawDataEntity, IRawDataRepository, RawDataType } from "@workspace/domai
 import { PrismaClient } from "@prisma/client";
 import { BasePrismaRepository } from "./base.prisma-repository";
 
+const PRISMA_TO_DOMAIN_RAW_DATA_TYPE: Record<PrismaRawDataType, RawDataType> = {
+  MARKET_STATS: RawDataType.MARKET_STATS,
+  INDUSTRY_REPORT: RawDataType.INDUSTRY_REPORT,
+  NEWS: RawDataType.NEWS,
+  CUSTOMER_RESEARCH: RawDataType.CUSTOMER_RESEARCH,
+  SNS_ANALYTICS: RawDataType.SNS_ANALYTICS,
+  SEARCH_TRENDS: RawDataType.SEARCH_TRENDS,
+  LOCATION_DATA: RawDataType.LOCATION_DATA,
+  SALES_DATA: RawDataType.SALES_DATA,
+  COMPETITOR_INFO: RawDataType.COMPETITOR_INFO,
+  PARTNER_HEARING: RawDataType.PARTNER_HEARING,
+  FINANCIAL_DATA: RawDataType.FINANCIAL_DATA,
+  EXPERT_HEARING: RawDataType.EXPERT_HEARING,
+};
+
+const DOMAIN_TO_PRISMA_RAW_DATA_TYPE: Record<RawDataType, PrismaRawDataType> = {
+  [RawDataType.MARKET_STATS]: "MARKET_STATS",
+  [RawDataType.INDUSTRY_REPORT]: "INDUSTRY_REPORT",
+  [RawDataType.NEWS]: "NEWS",
+  [RawDataType.CUSTOMER_RESEARCH]: "CUSTOMER_RESEARCH",
+  [RawDataType.SNS_ANALYTICS]: "SNS_ANALYTICS",
+  [RawDataType.SEARCH_TRENDS]: "SEARCH_TRENDS",
+  [RawDataType.LOCATION_DATA]: "LOCATION_DATA",
+  [RawDataType.SALES_DATA]: "SALES_DATA",
+  [RawDataType.COMPETITOR_INFO]: "COMPETITOR_INFO",
+  [RawDataType.PARTNER_HEARING]: "PARTNER_HEARING",
+  [RawDataType.FINANCIAL_DATA]: "FINANCIAL_DATA",
+  [RawDataType.EXPERT_HEARING]: "EXPERT_HEARING",
+};
+
 type RawDataCreateInput = {
   projectId: string;
   type: PrismaRawDataType;
@@ -27,7 +57,7 @@ export class RawDataPrismaRepository
     return RawDataEntity.reconstruct({
       id: model.id,
       projectId: model.projectId,
-      type: model.type as unknown as RawDataType,
+      type: PRISMA_TO_DOMAIN_RAW_DATA_TYPE[model.type],
       title: model.title,
       content: model.content,
       sourceUrl: model.sourceUrl,
@@ -43,7 +73,7 @@ export class RawDataPrismaRepository
   protected toPersistence(entity: RawDataEntity): RawDataCreateInput {
     return {
       projectId: entity.projectId,
-      type: entity.type as unknown as PrismaRawDataType,
+      type: DOMAIN_TO_PRISMA_RAW_DATA_TYPE[entity.type],
       title: entity.title,
       content: entity.content,
       sourceUrl: entity.sourceUrl ?? null,
@@ -81,7 +111,7 @@ export class RawDataPrismaRepository
     const records = await this.prisma.rawData.findMany({
       where: {
         projectId,
-        ...(type ? { type: type as unknown as PrismaRawDataType } : {}),
+        ...(type ? { type: DOMAIN_TO_PRISMA_RAW_DATA_TYPE[type] } : {}),
       },
       orderBy: { collectedAt: "desc" },
     });

@@ -201,7 +201,9 @@ describe("RawDataController", () => {
 
   describe("update", () => {
     it("returns 200 with the updated raw data", async () => {
+      const current = makeRawDataDto();
       const dto = makeRawDataDto({ title: "Updated Title" });
+      getRawDataQuery.execute.mockResolvedValue(current);
       updateRawDataCommand.execute.mockResolvedValue(dto);
 
       const req = makeReq({ projectId: "project-id", id: "test-id" }, { title: "Updated Title" });
@@ -217,7 +219,7 @@ describe("RawDataController", () => {
     });
 
     it("returns 404 when raw data is not found", async () => {
-      updateRawDataCommand.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
+      getRawDataQuery.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
 
       const req = makeReq({ projectId: "project-id", id: "missing-id" }, { title: "Updated" });
       const res = mockResponse();
@@ -225,9 +227,12 @@ describe("RawDataController", () => {
       await controller.update(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
+      expect(updateRawDataCommand.execute).not.toHaveBeenCalled();
     });
 
     it("returns 400 when validation fails (empty title)", async () => {
+      getRawDataQuery.execute.mockResolvedValue(makeRawDataDto());
+
       const req = makeReq({ projectId: "project-id", id: "test-id" }, { title: "" });
       const res = mockResponse();
 
@@ -240,6 +245,7 @@ describe("RawDataController", () => {
 
   describe("delete", () => {
     it("returns 204 when raw data is deleted", async () => {
+      getRawDataQuery.execute.mockResolvedValue(makeRawDataDto());
       deleteRawDataCommand.execute.mockResolvedValue(undefined);
 
       const req = makeReq({ projectId: "project-id", id: "test-id" });
@@ -253,7 +259,7 @@ describe("RawDataController", () => {
     });
 
     it("returns 404 when raw data is not found", async () => {
-      deleteRawDataCommand.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
+      getRawDataQuery.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
 
       const req = makeReq({ projectId: "project-id", id: "missing-id" });
       const res = mockResponse();
@@ -261,6 +267,7 @@ describe("RawDataController", () => {
       await controller.delete(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
+      expect(deleteRawDataCommand.execute).not.toHaveBeenCalled();
     });
   });
 });

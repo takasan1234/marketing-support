@@ -19,8 +19,11 @@ export class GetFrameworkEntryQuery extends BaseQueryUseCase<
 
   async execute(input: GetFrameworkEntryInput): Promise<FrameworkEntryDto> {
     if (input.version !== undefined) {
-      const versions = await this.repo.findAllVersions(input.projectId, input.frameworkType);
-      const entity = versions.find((e) => e.version === input.version);
+      const entity = await this.repo.findByVersion(
+        input.projectId,
+        input.frameworkType,
+        input.version,
+      );
       if (!entity) {
         throw new NotFoundError(
           "FrameworkEntry",

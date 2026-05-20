@@ -31,11 +31,7 @@ export function createApp(): express.Express {
 
   app.use(
     cors({
-      origin: [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-      ],
+      origin: env.ALLOWED_ORIGINS.split(","),
       credentials: true,
     })
   );
@@ -93,7 +89,7 @@ export function createApp(): express.Express {
   const frameworkEntryRepo = new FrameworkEntryPrismaRepository(prisma);
   const linkRepo = new FrameworkRawDataLinkRepository(prisma);
   const upsertFrameworkEntry = new UpsertFrameworkEntryCommand(frameworkEntryRepo);
-  const createFrameworkVersion = new CreateFrameworkVersionCommand(frameworkEntryRepo, prisma);
+  const createFrameworkVersion = new CreateFrameworkVersionCommand(frameworkEntryRepo);
   const getFrameworkEntry = new GetFrameworkEntryQuery(frameworkEntryRepo);
   const listFrameworkVersions = new ListFrameworkVersionsQuery(frameworkEntryRepo);
   const frameworkController = new FrameworkEntryController(
@@ -102,6 +98,7 @@ export function createApp(): express.Express {
     getFrameworkEntry,
     listFrameworkVersions,
     linkRepo,
+    getRawData,
   );
 
   apiRouter.get("/projects/:projectId/frameworks/:frameworkType", frameworkController.getLatest);

@@ -17,8 +17,10 @@ describe("UpsertFrameworkEntryCommand", () => {
       delete: vi.fn(),
       findLatest: vi.fn().mockResolvedValue(null),
       findAllVersions: vi.fn(),
+      findByVersion: vi.fn(),
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
+      createNextVersion: vi.fn(),
     };
     const command = new UpsertFrameworkEntryCommand(repo);
 
@@ -44,8 +46,10 @@ describe("UpsertFrameworkEntryCommand", () => {
       delete: vi.fn(),
       findLatest: vi.fn().mockResolvedValue(existing),
       findAllVersions: vi.fn(),
+      findByVersion: vi.fn(),
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
+      createNextVersion: vi.fn(),
     };
     const command = new UpsertFrameworkEntryCommand(repo);
 

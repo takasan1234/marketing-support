@@ -4,6 +4,7 @@ import {
   UpsertFrameworkEntryCommand,
   CreateFrameworkVersionCommand,
   GetFrameworkEntryQuery,
+  GetRawDataQuery,
   ListFrameworkVersionsQuery,
   NotFoundError,
 } from "../../application";
@@ -29,6 +30,7 @@ export class FrameworkEntryController {
     private readonly getFrameworkEntryQuery: GetFrameworkEntryQuery,
     private readonly listFrameworkVersionsQuery: ListFrameworkVersionsQuery,
     private readonly linkRepo: FrameworkRawDataLinkRepository,
+    private readonly getRawDataQuery: GetRawDataQuery,
   ) {}
 
   getLatest = async (
@@ -174,7 +176,13 @@ export class FrameworkEntryController {
       return;
     }
     try {
-      // Get the latest entry to find its ID
+      // Verify raw data belongs to the same project
+      const rawData = await this.getRawDataQuery.execute({ id: parsed.data.rawDataId });
+      if (rawData.projectId !== req.params.projectId) {
+        res.status(400).json({ error: "Raw data does not belong to this project" });
+        return;
+      }
+
       const entry = await this.getFrameworkEntryQuery.execute({
         projectId: req.params.projectId,
         frameworkType,
@@ -205,9 +213,27 @@ export class FrameworkEntryController {
       return;
     }
     try {
+      // Verify the link belongs to the correct project's framework
+      const link = await this.linkRepo.findById(req.params.linkId);
+      if (!link) {
+        res.status(404).json({ error: "Link not found" });
+        return;
+      }
+      const entry = await this.getFrameworkEntryQuery.execute({
+        projectId: req.params.projectId,
+        frameworkType,
+      });
+      if (link.frameworkEntryId !== entry.id) {
+        res.status(404).json({ error: "Link not found" });
+        return;
+      }
       await this.linkRepo.delete(req.params.linkId);
       res.status(204).send();
-    } catch {
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        res.status(404).json({ error: error.message });
+        return;
+      }
       res.status(500).json({ error: "Internal server error" });
     }
   };

@@ -33,6 +33,7 @@ export function RawDataLinker({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rawDataList, setRawDataList] = useState<RawDataDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   useEffect(() => {
     setLinks(existingLinks);
@@ -52,6 +53,7 @@ export function RawDataLinker({
   }
 
   async function handleAddLink(rawDataId: string) {
+    setLinkError(null);
     try {
       const newLink = await addLink(projectId, frameworkType, {
         rawDataId,
@@ -62,18 +64,19 @@ export function RawDataLinker({
       onLinksChange?.(updated);
       setIsModalOpen(false);
     } catch {
-      // silently ignore
+      setLinkError("リンクの追加に失敗しました。再試行してください。");
     }
   }
 
   async function handleDeleteLink(linkId: string) {
+    setLinkError(null);
     try {
       await deleteLink(projectId, frameworkType, linkId);
       const updated = links.filter((l) => l.id !== linkId);
       setLinks(updated);
       onLinksChange?.(updated);
     } catch {
-      // silently ignore
+      setLinkError("リンクの削除に失敗しました。再試行してください。");
     }
   }
 
@@ -81,6 +84,9 @@ export function RawDataLinker({
 
   return (
     <div className="flex flex-col gap-2">
+      {linkError && (
+        <p className="text-destructive text-xs">{linkError}</p>
+      )}
       {links.length > 0 && (
         <div className="flex flex-col gap-1">
           {links.map((link) => (

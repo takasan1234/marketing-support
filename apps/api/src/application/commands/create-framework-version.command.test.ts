@@ -3,6 +3,34 @@ import { CreateFrameworkVersionCommand } from "./create-framework-version.comman
 import { FrameworkEntryEntity, FrameworkType } from "@workspace/domain";
 import type { IFrameworkEntryRepository } from "@workspace/domain";
 
+const makeEntry = (version: number, isLatest = true) =>
+  FrameworkEntryEntity.reconstruct({
+    id: `entry-${version}`,
+    projectId: "proj-1",
+    frameworkType: FrameworkType.SWOT,
+    version,
+    isLatest,
+    data: {},
+    note: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+const makeRepo = (
+  overrides: Partial<IFrameworkEntryRepository> = {},
+): IFrameworkEntryRepository => ({
+  findById: vi.fn(),
+  save: vi.fn(),
+  delete: vi.fn(),
+  findLatest: vi.fn(),
+  findAllVersions: vi.fn(),
+  findByVersion: vi.fn(),
+  findLatestByProject: vi.fn(),
+  getNextVersion: vi.fn(),
+  createNextVersion: vi.fn(),
+  ...overrides,
+});
+
 describe("CreateFrameworkVersionCommand", () => {
   const input = {
     projectId: "proj-1",
@@ -10,80 +38,48 @@ describe("CreateFrameworkVersionCommand", () => {
     data: { strengths: [] },
   };
 
-  it("creates first version without markNotLatest when no existing entry", async () => {
-    const repo: IFrameworkEntryRepository = {
-      findById: vi.fn(),
-      save: vi.fn(),
-      delete: vi.fn(),
-      findLatest: vi.fn().mockResolvedValue(null),
-      findAllVersions: vi.fn(),
-      findLatestByProject: vi.fn(),
-      getNextVersion: vi.fn().mockResolvedValue(1),
-    };
-    const prisma = {
-      $transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn({})),
-    };
-    const command = new CreateFrameworkVersionCommand(repo, prisma);
+  it("delegates to repo.createNextVersion and returns dto", async () => {
+    const newEntry = makeEntry(1);
+    const repo = makeRepo({
+      createNextVersion: vi.fn().mockResolvedValue(newEntry),
+    });
+    const command = new CreateFrameworkVersionCommand(repo);
 
     const result = await command.execute(input);
 
-    expect(prisma.$transaction).toHaveBeenCalledOnce();
-    expect(repo.getNextVersion).toHaveBeenCalledWith("proj-1", FrameworkType.SWOT);
-    expect(repo.save).toHaveBeenCalledOnce();
+    expect(repo.createNextVersion).toHaveBeenCalledWith(
+      "proj-1",
+      FrameworkType.SWOT,
+      { strengths: [] },
+      null,
+    );
     expect(result.version).toBe(1);
     expect(result.isLatest).toBe(true);
   });
 
-  it("marks existing latest not latest and saves new version", async () => {
-    const existing = FrameworkEntryEntity.reconstruct({
-      id: "entry-1",
-      projectId: "proj-1",
-      frameworkType: FrameworkType.SWOT,
-      version: 1,
-      isLatest: true,
-      data: {},
-      note: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  it("passes note when provided", async () => {
+    const newEntry = makeEntry(2);
+    const repo = makeRepo({
+      createNextVersion: vi.fn().mockResolvedValue(newEntry),
     });
-    const repo: IFrameworkEntryRepository = {
-      findById: vi.fn(),
-      save: vi.fn(),
-      delete: vi.fn(),
-      findLatest: vi.fn().mockResolvedValue(existing),
-      findAllVersions: vi.fn(),
-      findLatestByProject: vi.fn(),
-      getNextVersion: vi.fn().mockResolvedValue(2),
-    };
-    const prisma = {
-      $transaction: vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn({})),
-    };
-    const command = new CreateFrameworkVersionCommand(repo, prisma);
+    const command = new CreateFrameworkVersionCommand(repo);
 
-    const result = await command.execute(input);
+    await command.execute({ ...input, note: "v2 note" });
 
-    expect(repo.save).toHaveBeenCalledTimes(2);
-    const firstSave = vi.mocked(repo.save).mock.calls[0]![0];
-    expect(firstSave.isLatest).toBe(false);
-    expect(result.version).toBe(2);
-    expect(result.isLatest).toBe(true);
+    expect(repo.createNextVersion).toHaveBeenCalledWith(
+      "proj-1",
+      FrameworkType.SWOT,
+      { strengths: [] },
+      "v2 note",
+    );
   });
 
-  it("propagates transaction errors", async () => {
-    const repo: IFrameworkEntryRepository = {
-      findById: vi.fn(),
-      save: vi.fn(),
-      delete: vi.fn(),
-      findLatest: vi.fn(),
-      findAllVersions: vi.fn(),
-      findLatestByProject: vi.fn(),
-      getNextVersion: vi.fn(),
-    };
-    const prisma = {
-      $transaction: vi.fn().mockRejectedValue(new Error("tx failed")),
-    };
-    const command = new CreateFrameworkVersionCommand(repo, prisma);
+  it("propagates errors from repo", async () => {
+    const repo = makeRepo({
+      createNextVersion: vi.fn().mockRejectedValue(new Error("db error")),
+    });
+    const command = new CreateFrameworkVersionCommand(repo);
 
-    await expect(command.execute(input)).rejects.toThrow("tx failed");
+    await expect(command.execute(input)).rejects.toThrow("db error");
   });
 });
