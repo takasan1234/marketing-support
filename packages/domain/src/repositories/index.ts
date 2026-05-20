@@ -4,3 +4,4 @@ export * from "./base.repository";
 export * from "./project.repository";
 export * from "./framework-entry.repository";
 export * from "./raw-data.repository";
+export * from "./framework-raw-data-link.repository";

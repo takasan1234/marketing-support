@@ -1,6 +1,5 @@
 import { BaseCommandUseCase } from "./base.command";
-import { FrameworkRawDataLinkRepository } from "@workspace/database";
-import { FrameworkType } from "@workspace/domain";
+import { IFrameworkRawDataLinkRepository, FrameworkType } from "@workspace/domain";
 import { GetFrameworkEntryQuery } from "../queries/get-framework-entry.query";
 import { NotFoundError } from "../errors";
 
@@ -15,7 +14,7 @@ export class DeleteFrameworkRawDataLinkCommand extends BaseCommandUseCase<
   void
 > {
   constructor(
-    private readonly linkRepo: FrameworkRawDataLinkRepository,
+    private readonly linkRepo: IFrameworkRawDataLinkRepository,
     private readonly getFrameworkEntryQuery: GetFrameworkEntryQuery,
   ) {
     super();

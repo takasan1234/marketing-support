@@ -1,6 +1,5 @@
 import { BaseCommandUseCase } from "./base.command";
-import { FrameworkRawDataLinkRepository, LinkDto } from "@workspace/database";
-import { FrameworkType } from "@workspace/domain";
+import { IFrameworkRawDataLinkRepository, LinkDto, FrameworkType } from "@workspace/domain";
 import { GetRawDataQuery } from "../queries/get-raw-data.query";
 import { GetFrameworkEntryQuery } from "../queries/get-framework-entry.query";
 
@@ -17,7 +16,7 @@ export class AddFrameworkRawDataLinkCommand extends BaseCommandUseCase<
   LinkDto
 > {
   constructor(
-    private readonly linkRepo: FrameworkRawDataLinkRepository,
+    private readonly linkRepo: IFrameworkRawDataLinkRepository,
     private readonly getRawDataQuery: GetRawDataQuery,
     private readonly getFrameworkEntryQuery: GetFrameworkEntryQuery,
   ) {

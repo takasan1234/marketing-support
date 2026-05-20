@@ -1,6 +1,5 @@
 import { BaseQueryUseCase } from "./base.query";
-import { FrameworkRawDataLinkRepository, LinkDto } from "@workspace/database";
-import { FrameworkType } from "@workspace/domain";
+import { IFrameworkRawDataLinkRepository, LinkDto, FrameworkType } from "@workspace/domain";
 import { GetFrameworkEntryQuery } from "./get-framework-entry.query";
 
 type ListFrameworkRawDataLinksInput = {
@@ -13,7 +12,7 @@ export class ListFrameworkRawDataLinksQuery extends BaseQueryUseCase<
   LinkDto[]
 > {
   constructor(
-    private readonly linkRepo: FrameworkRawDataLinkRepository,
+    private readonly linkRepo: IFrameworkRawDataLinkRepository,
     private readonly getFrameworkEntryQuery: GetFrameworkEntryQuery,
   ) {
     super();

@@ -12,7 +12,7 @@ import { ListFrameworkRawDataLinksQuery } from "../../application/queries/list-f
 import { NotFoundError } from "../../application/errors";
 import type { FrameworkEntryDto } from "../../application/dto/framework-entry.dto";
 import { FrameworkType } from "@workspace/domain";
-import type { LinkDto } from "@workspace/database";
+import type { LinkDto } from "@workspace/domain";
 
 const makeEntryDto = (overrides: Partial<FrameworkEntryDto> = {}): FrameworkEntryDto => ({
   id: "entry-id",

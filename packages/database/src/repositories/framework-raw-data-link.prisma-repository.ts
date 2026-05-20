@@ -1,15 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { IFrameworkRawDataLinkRepository, LinkDto } from "@workspace/domain";
 
-export type LinkDto = {
-  id: string;
-  frameworkEntryId: string;
-  rawDataId: string;
-  subElementId?: string | null;
-  note?: string | null;
-  createdAt: string;
-};
-
-export class FrameworkRawDataLinkRepository {
+export class FrameworkRawDataLinkRepository implements IFrameworkRawDataLinkRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   private toDto(record: {

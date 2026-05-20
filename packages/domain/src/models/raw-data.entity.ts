@@ -83,8 +83,8 @@ export class RawDataEntity extends BaseEntity<string> {
     return this.props.collectedAt;
   }
 
-  get expiresAt(): Date | null | undefined {
-    return this.props.expiresAt;
+  get expiresAt(): Date | null {
+    return this.props.expiresAt ?? null;
   }
 
   get tags(): string[] {
