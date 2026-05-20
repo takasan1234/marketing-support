@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Button } from "@workspace/ui/components/button";
+
+export const dynamic = "force-dynamic";
 import {
   Card,
   CardHeader,

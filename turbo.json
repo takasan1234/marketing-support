@@ -1,7 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalEnv": ["DATABASE_URL", "NODE_ENV", "PORT", "CI", "OPENAPI_PATH"],
+  "globalEnv": ["DATABASE_URL", "NODE_ENV", "PORT", "CI", "OPENAPI_PATH", "DATABASE_URL_TEST"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
