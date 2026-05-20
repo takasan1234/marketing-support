@@ -71,12 +71,12 @@ export class RawDataEntity extends BaseEntity<string> {
     return this.props.content;
   }
 
-  get sourceUrl(): string | null | undefined {
-    return this.props.sourceUrl;
+  get sourceUrl(): string | null {
+    return this.props.sourceUrl ?? null;
   }
 
-  get sourceNote(): string | null | undefined {
-    return this.props.sourceNote;
+  get sourceNote(): string | null {
+    return this.props.sourceNote ?? null;
   }
 
   get collectedAt(): Date {

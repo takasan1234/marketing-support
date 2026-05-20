@@ -9,3 +9,5 @@ export * from "./update-raw-data.command";
 export * from "./delete-raw-data.command";
 export * from "./upsert-framework-entry.command";
 export * from "./create-framework-version.command";
+export * from "./add-framework-raw-data-link.command";
+export * from "./delete-framework-raw-data-link.command";

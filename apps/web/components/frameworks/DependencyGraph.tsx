@@ -184,7 +184,10 @@ export function DependencyGraph({ nodes, projectId }: DependencyGraphProps) {
         height={CANVAS_HEIGHT}
         viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
         style={{ fontFamily: "sans-serif" }}
+        role="img"
+        aria-label="Framework dependency graph showing relationships between analysis frameworks across 7 layers"
       >
+        <title>Framework Dependency Graph</title>
         {/* Arrow marker definition */}
         <defs>
           <marker

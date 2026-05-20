@@ -29,6 +29,7 @@ const makeRepo = (
   findLatestByProject: vi.fn(),
   getNextVersion: vi.fn(),
   createNextVersion: vi.fn(),
+  upsertLatest: vi.fn(),
   ...overrides,
 });
 

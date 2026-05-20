@@ -6,11 +6,13 @@ import { UpsertFrameworkEntryCommand } from "../../application/commands/upsert-f
 import { CreateFrameworkVersionCommand } from "../../application/commands/create-framework-version.command";
 import { GetFrameworkEntryQuery } from "../../application/queries/get-framework-entry.query";
 import { ListFrameworkVersionsQuery } from "../../application/queries/list-framework-versions.query";
+import { AddFrameworkRawDataLinkCommand } from "../../application/commands/add-framework-raw-data-link.command";
+import { DeleteFrameworkRawDataLinkCommand } from "../../application/commands/delete-framework-raw-data-link.command";
+import { ListFrameworkRawDataLinksQuery } from "../../application/queries/list-framework-raw-data-links.query";
 import { NotFoundError } from "../../application/errors";
 import type { FrameworkEntryDto } from "../../application/dto/framework-entry.dto";
 import { FrameworkType } from "@workspace/domain";
-import { GetRawDataQuery } from "../../application/queries/get-raw-data.query";
-import type { FrameworkRawDataLinkRepository, LinkDto } from "@workspace/database";
+import type { LinkDto } from "@workspace/database";
 
 const makeEntryDto = (overrides: Partial<FrameworkEntryDto> = {}): FrameworkEntryDto => ({
   id: "entry-id",
@@ -44,13 +46,9 @@ describe("FrameworkEntryController", () => {
   let createVersionCmd: { execute: ReturnType<typeof vi.fn> };
   let getEntryQuery: { execute: ReturnType<typeof vi.fn> };
   let listVersionsQuery: { execute: ReturnType<typeof vi.fn> };
-  let linkRepo: {
-    create: ReturnType<typeof vi.fn>;
-    delete: ReturnType<typeof vi.fn>;
-    findById: ReturnType<typeof vi.fn>;
-    findByFrameworkEntry: ReturnType<typeof vi.fn>;
-  };
-  let getRawDataQuery: { execute: ReturnType<typeof vi.fn> };
+  let addLinkCmd: { execute: ReturnType<typeof vi.fn> };
+  let deleteLinkCmd: { execute: ReturnType<typeof vi.fn> };
+  let listLinksQuery: { execute: ReturnType<typeof vi.fn> };
   let controller: FrameworkEntryController;
 
   beforeEach(() => {
@@ -58,21 +56,18 @@ describe("FrameworkEntryController", () => {
     createVersionCmd = { execute: vi.fn() };
     getEntryQuery = { execute: vi.fn() };
     listVersionsQuery = { execute: vi.fn() };
-    linkRepo = {
-      create: vi.fn(),
-      delete: vi.fn(),
-      findById: vi.fn(),
-      findByFrameworkEntry: vi.fn(),
-    };
-    getRawDataQuery = { execute: vi.fn() };
+    addLinkCmd = { execute: vi.fn() };
+    deleteLinkCmd = { execute: vi.fn() };
+    listLinksQuery = { execute: vi.fn() };
 
     controller = new FrameworkEntryController(
       upsertCmd as unknown as UpsertFrameworkEntryCommand,
       createVersionCmd as unknown as CreateFrameworkVersionCommand,
       getEntryQuery as unknown as GetFrameworkEntryQuery,
       listVersionsQuery as unknown as ListFrameworkVersionsQuery,
-      linkRepo as unknown as FrameworkRawDataLinkRepository,
-      getRawDataQuery as unknown as GetRawDataQuery,
+      addLinkCmd as unknown as AddFrameworkRawDataLinkCommand,
+      deleteLinkCmd as unknown as DeleteFrameworkRawDataLinkCommand,
+      listLinksQuery as unknown as ListFrameworkRawDataLinksQuery,
     );
   });
 
@@ -219,11 +214,8 @@ describe("FrameworkEntryController", () => {
   // -----------------------------------------------------------------------
   describe("addLink", () => {
     it("returns 201 with the created link", async () => {
-      const entryDto = makeEntryDto();
       const linkDto = makeLinkDto();
-      getRawDataQuery.execute.mockResolvedValue({ projectId: "project-id", id: "raw-data-id" });
-      getEntryQuery.execute.mockResolvedValue(entryDto);
-      linkRepo.create.mockResolvedValue(linkDto);
+      addLinkCmd.execute.mockResolvedValue(linkDto);
 
       const req = makeReq(
         { projectId: "project-id", frameworkType: "PEST" },
@@ -233,12 +225,9 @@ describe("FrameworkEntryController", () => {
 
       await controller.addLink(req, res);
 
-      expect(getEntryQuery.execute).toHaveBeenCalledWith({
+      expect(addLinkCmd.execute).toHaveBeenCalledWith({
         projectId: "project-id",
         frameworkType: FrameworkType.PEST,
-      });
-      expect(linkRepo.create).toHaveBeenCalledWith({
-        frameworkEntryId: "entry-id",
         rawDataId: "raw-data-id",
         subElementId: undefined,
         note: undefined,
@@ -248,7 +237,9 @@ describe("FrameworkEntryController", () => {
     });
 
     it("returns 400 when raw data belongs to different project", async () => {
-      getRawDataQuery.execute.mockResolvedValue({ projectId: "other-project", id: "raw-data-id" });
+      addLinkCmd.execute.mockRejectedValue(
+        new Error("Raw data does not belong to this project"),
+      );
 
       const req = makeReq(
         { projectId: "project-id", frameworkType: "PEST" },
@@ -259,12 +250,10 @@ describe("FrameworkEntryController", () => {
       await controller.addLink(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(linkRepo.create).not.toHaveBeenCalled();
     });
 
     it("returns 404 when framework entry not found", async () => {
-      getRawDataQuery.execute.mockResolvedValue({ projectId: "project-id", id: "raw-data-id" });
-      getEntryQuery.execute.mockRejectedValue(
+      addLinkCmd.execute.mockRejectedValue(
         new NotFoundError("FrameworkEntry", "project-id/PEST"),
       );
 
@@ -289,7 +278,7 @@ describe("FrameworkEntryController", () => {
       await controller.addLink(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(linkRepo.create).not.toHaveBeenCalled();
+      expect(addLinkCmd.execute).not.toHaveBeenCalled();
     });
   });
 
@@ -298,11 +287,7 @@ describe("FrameworkEntryController", () => {
   // -----------------------------------------------------------------------
   describe("deleteLink", () => {
     it("returns 204 when link is deleted", async () => {
-      const entryDto = makeEntryDto();
-      const linkDto = makeLinkDto({ frameworkEntryId: entryDto.id });
-      linkRepo.findById.mockResolvedValue(linkDto);
-      getEntryQuery.execute.mockResolvedValue(entryDto);
-      linkRepo.delete.mockResolvedValue(undefined);
+      deleteLinkCmd.execute.mockResolvedValue(undefined);
 
       const req = makeReq({
         projectId: "project-id",
@@ -313,12 +298,11 @@ describe("FrameworkEntryController", () => {
 
       await controller.deleteLink(req, res);
 
-      expect(linkRepo.findById).toHaveBeenCalledWith("link-id");
-      expect(getEntryQuery.execute).toHaveBeenCalledWith({
+      expect(deleteLinkCmd.execute).toHaveBeenCalledWith({
         projectId: "project-id",
         frameworkType: FrameworkType.PEST,
+        linkId: "link-id",
       });
-      expect(linkRepo.delete).toHaveBeenCalledWith("link-id");
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
     });
@@ -334,11 +318,11 @@ describe("FrameworkEntryController", () => {
       await controller.deleteLink(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(linkRepo.delete).not.toHaveBeenCalled();
+      expect(deleteLinkCmd.execute).not.toHaveBeenCalled();
     });
 
     it("returns 404 when link not found", async () => {
-      linkRepo.findById.mockResolvedValue(null);
+      deleteLinkCmd.execute.mockRejectedValue(new NotFoundError("Link", "link-id"));
 
       const req = makeReq({
         projectId: "project-id",
@@ -350,34 +334,10 @@ describe("FrameworkEntryController", () => {
       await controller.deleteLink(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(linkRepo.delete).not.toHaveBeenCalled();
-    });
-
-    it("returns 404 when link belongs to a different framework entry", async () => {
-      const entryDto = makeEntryDto({ id: "entry-id" });
-      const linkDto = makeLinkDto({ frameworkEntryId: "other-entry-id" });
-      linkRepo.findById.mockResolvedValue(linkDto);
-      getEntryQuery.execute.mockResolvedValue(entryDto);
-
-      const req = makeReq({
-        projectId: "project-id",
-        frameworkType: "PEST",
-        linkId: "link-id",
-      });
-      const res = mockResponse();
-
-      await controller.deleteLink(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(linkRepo.delete).not.toHaveBeenCalled();
     });
 
     it("returns 500 on unexpected error", async () => {
-      const entryDto = makeEntryDto();
-      const linkDto = makeLinkDto({ frameworkEntryId: entryDto.id });
-      linkRepo.findById.mockResolvedValue(linkDto);
-      getEntryQuery.execute.mockResolvedValue(entryDto);
-      linkRepo.delete.mockRejectedValue(new Error("DB error"));
+      deleteLinkCmd.execute.mockRejectedValue(new Error("DB error"));
 
       const req = makeReq({
         projectId: "project-id",
@@ -387,6 +347,64 @@ describe("FrameworkEntryController", () => {
       const res = mockResponse();
 
       await controller.deleteLink(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // listLinks
+  // -----------------------------------------------------------------------
+  describe("listLinks", () => {
+    it("returns 200 with links list", async () => {
+      const links = [makeLinkDto(), makeLinkDto({ id: "link-2", rawDataId: "raw-2" })];
+      listLinksQuery.execute.mockResolvedValue(links);
+
+      const req = makeReq({ projectId: "project-id", frameworkType: "PEST" });
+      const res = mockResponse();
+
+      await controller.listLinks(req, res);
+
+      expect(listLinksQuery.execute).toHaveBeenCalledWith({
+        projectId: "project-id",
+        frameworkType: FrameworkType.PEST,
+      });
+      expect(res.json).toHaveBeenCalledWith(links);
+    });
+
+    it("returns 400 for invalid frameworkType", async () => {
+      const req = makeReq({
+        projectId: "project-id",
+        frameworkType: "INVALID",
+      });
+      const res = mockResponse();
+
+      await controller.listLinks(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(listLinksQuery.execute).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 when framework entry not found", async () => {
+      listLinksQuery.execute.mockRejectedValue(
+        new NotFoundError("FrameworkEntry", "project-id/PEST"),
+      );
+
+      const req = makeReq({ projectId: "project-id", frameworkType: "PEST" });
+      const res = mockResponse();
+
+      await controller.listLinks(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+
+    it("returns 500 on unexpected error", async () => {
+      listLinksQuery.execute.mockRejectedValue(new Error("DB error"));
+
+      const req = makeReq({ projectId: "project-id", frameworkType: "PEST" });
+      const res = mockResponse();
+
+      await controller.listLinks(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });

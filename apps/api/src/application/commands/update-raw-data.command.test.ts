@@ -31,7 +31,7 @@ describe("UpdateRawDataCommand", () => {
     };
     const command = new UpdateRawDataCommand(repo);
 
-    const result = await command.execute({ id: "raw-1", title: "New title" });
+    const result = await command.execute({ id: "raw-1", projectId: "proj-1", title: "New title" });
 
     expect(repo.findById).toHaveBeenCalledWith("raw-1");
     expect(repo.save).toHaveBeenCalledOnce();
@@ -48,6 +48,19 @@ describe("UpdateRawDataCommand", () => {
     };
     const command = new UpdateRawDataCommand(repo);
 
-    await expect(command.execute({ id: "missing", title: "X" })).rejects.toThrow(NotFoundError);
+    await expect(command.execute({ id: "missing", projectId: "proj-1", title: "X" })).rejects.toThrow(NotFoundError);
+  });
+
+  it("throws NotFoundError when projectId does not match", async () => {
+    const repo: IRawDataRepository = {
+      findById: vi.fn().mockResolvedValue(makeEntity()),
+      save: vi.fn(),
+      delete: vi.fn(),
+      findByProject: vi.fn(),
+      findExpired: vi.fn(),
+    };
+    const command = new UpdateRawDataCommand(repo);
+
+    await expect(command.execute({ id: "raw-1", projectId: "other-proj", title: "New" })).rejects.toThrow(NotFoundError);
   });
 });

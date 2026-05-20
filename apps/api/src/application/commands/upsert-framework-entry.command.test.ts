@@ -11,51 +11,66 @@ describe("UpsertFrameworkEntryCommand", () => {
   };
 
   it("creates new entry when none exists", async () => {
-    const repo: IFrameworkEntryRepository = {
-      findById: vi.fn(),
-      save: vi.fn(),
-      delete: vi.fn(),
-      findLatest: vi.fn().mockResolvedValue(null),
-      findAllVersions: vi.fn(),
-      findByVersion: vi.fn(),
-      findLatestByProject: vi.fn(),
-      getNextVersion: vi.fn(),
-      createNextVersion: vi.fn(),
-    };
-    const command = new UpsertFrameworkEntryCommand(repo);
-
-    const result = await command.execute(input);
-
-    expect(repo.save).toHaveBeenCalledOnce();
-    const saved = vi.mocked(repo.save).mock.calls[0]![0];
-    expect(saved).toBeInstanceOf(FrameworkEntryEntity);
-    expect(result.version).toBe(1);
-    expect(result.isLatest).toBe(true);
-    expect(result.frameworkType).toBe(FrameworkType.PEST);
-  });
-
-  it("updates existing entry via updateData when latest exists", async () => {
-    const existing = FrameworkEntryEntity.create({
+    const createdEntity = FrameworkEntryEntity.create({
       projectId: "proj-1",
       frameworkType: FrameworkType.PEST,
-      data: { old: true },
+      data: { politics: [] },
     });
     const repo: IFrameworkEntryRepository = {
       findById: vi.fn(),
       save: vi.fn(),
       delete: vi.fn(),
-      findLatest: vi.fn().mockResolvedValue(existing),
+      findLatest: vi.fn(),
       findAllVersions: vi.fn(),
       findByVersion: vi.fn(),
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
       createNextVersion: vi.fn(),
+      upsertLatest: vi.fn().mockResolvedValue(createdEntity),
+    };
+    const command = new UpsertFrameworkEntryCommand(repo);
+
+    const result = await command.execute(input);
+
+    expect(repo.upsertLatest).toHaveBeenCalledWith(
+      "proj-1",
+      FrameworkType.PEST,
+      { politics: [] },
+      undefined,
+    );
+    expect(result.version).toBe(1);
+    expect(result.isLatest).toBe(true);
+    expect(result.frameworkType).toBe(FrameworkType.PEST);
+  });
+
+  it("updates existing entry when latest exists", async () => {
+    const updatedEntity = FrameworkEntryEntity.create({
+      projectId: "proj-1",
+      frameworkType: FrameworkType.PEST,
+      data: { new: true },
+    });
+    const repo: IFrameworkEntryRepository = {
+      findById: vi.fn(),
+      save: vi.fn(),
+      delete: vi.fn(),
+      findLatest: vi.fn(),
+      findAllVersions: vi.fn(),
+      findByVersion: vi.fn(),
+      findLatestByProject: vi.fn(),
+      getNextVersion: vi.fn(),
+      createNextVersion: vi.fn(),
+      upsertLatest: vi.fn().mockResolvedValue(updatedEntity),
     };
     const command = new UpsertFrameworkEntryCommand(repo);
 
     const result = await command.execute({ ...input, data: { new: true } });
 
-    expect(repo.save).toHaveBeenCalledOnce();
+    expect(repo.upsertLatest).toHaveBeenCalledWith(
+      "proj-1",
+      FrameworkType.PEST,
+      { new: true },
+      undefined,
+    );
     expect(result.data).toEqual({ new: true });
     expect(result.frameworkType).toBe(FrameworkType.PEST);
   });

@@ -32,8 +32,8 @@ export class ProjectEntity extends BaseEntity<string> {
     return this.props.name;
   }
 
-  get description(): string | null | undefined {
-    return this.props.description;
+  get description(): string | null {
+    return this.props.description ?? null;
   }
 
   get createdAt(): Date {

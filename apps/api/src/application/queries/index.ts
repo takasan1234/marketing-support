@@ -7,3 +7,4 @@ export * from "./list-raw-data.query";
 export * from "./get-raw-data.query";
 export * from "./get-framework-entry.query";
 export * from "./list-framework-versions.query";
+export * from "./list-framework-raw-data-links.query";

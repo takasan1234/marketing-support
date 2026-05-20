@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(git push *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -29,7 +29,7 @@ describe("DeleteRawDataCommand", () => {
     };
     const command = new DeleteRawDataCommand(repo);
 
-    await command.execute({ id: "raw-1" });
+    await command.execute({ id: "raw-1", projectId: "proj-1" });
 
     expect(repo.delete).toHaveBeenCalledWith(entity);
   });
@@ -44,6 +44,33 @@ describe("DeleteRawDataCommand", () => {
     };
     const command = new DeleteRawDataCommand(repo);
 
-    await expect(command.execute({ id: "missing" })).rejects.toThrow(NotFoundError);
+    await expect(command.execute({ id: "missing", projectId: "proj-1" })).rejects.toThrow(NotFoundError);
+  });
+
+  it("throws NotFoundError when projectId does not match", async () => {
+    const entity = RawDataEntity.reconstruct({
+      id: "raw-1",
+      projectId: "proj-1",
+      type: RawDataType.NEWS,
+      title: "T",
+      content: "C",
+      sourceUrl: null,
+      sourceNote: null,
+      collectedAt: new Date(),
+      expiresAt: new Date("2099-01-01"),
+      tags: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const repo: IRawDataRepository = {
+      findById: vi.fn().mockResolvedValue(entity),
+      save: vi.fn(),
+      delete: vi.fn(),
+      findByProject: vi.fn(),
+      findExpired: vi.fn(),
+    };
+    const command = new DeleteRawDataCommand(repo);
+
+    await expect(command.execute({ id: "raw-1", projectId: "other-proj" })).rejects.toThrow(NotFoundError);
   });
 });

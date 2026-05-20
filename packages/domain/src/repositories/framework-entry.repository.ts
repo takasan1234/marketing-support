@@ -14,4 +14,10 @@ export interface IFrameworkEntryRepository extends IRepository<FrameworkEntryEnt
     data: Record<string, unknown>,
     note?: string | null,
   ): Promise<FrameworkEntryEntity>;
+  upsertLatest(
+    projectId: string,
+    frameworkType: FrameworkType,
+    data: Record<string, unknown>,
+    note?: string | null,
+  ): Promise<FrameworkEntryEntity>;
 }

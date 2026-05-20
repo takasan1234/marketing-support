@@ -4,11 +4,12 @@ import {
   UpsertFrameworkEntryCommand,
   CreateFrameworkVersionCommand,
   GetFrameworkEntryQuery,
-  GetRawDataQuery,
   ListFrameworkVersionsQuery,
   NotFoundError,
+  AddFrameworkRawDataLinkCommand,
+  DeleteFrameworkRawDataLinkCommand,
+  ListFrameworkRawDataLinksQuery,
 } from "../../application";
-import { FrameworkRawDataLinkRepository } from "@workspace/database";
 import {
   UpsertFrameworkEntrySchema,
   CreateVersionSchema,
@@ -29,8 +30,9 @@ export class FrameworkEntryController {
     private readonly createFrameworkVersionCommand: CreateFrameworkVersionCommand,
     private readonly getFrameworkEntryQuery: GetFrameworkEntryQuery,
     private readonly listFrameworkVersionsQuery: ListFrameworkVersionsQuery,
-    private readonly linkRepo: FrameworkRawDataLinkRepository,
-    private readonly getRawDataQuery: GetRawDataQuery,
+    private readonly addLinkCommand: AddFrameworkRawDataLinkCommand,
+    private readonly deleteLinkCommand: DeleteFrameworkRawDataLinkCommand,
+    private readonly listLinksQuery: ListFrameworkRawDataLinksQuery,
   ) {}
 
   getLatest = async (
@@ -176,19 +178,9 @@ export class FrameworkEntryController {
       return;
     }
     try {
-      // Verify raw data belongs to the same project
-      const rawData = await this.getRawDataQuery.execute({ id: parsed.data.rawDataId });
-      if (rawData.projectId !== req.params.projectId) {
-        res.status(400).json({ error: "Raw data does not belong to this project" });
-        return;
-      }
-
-      const entry = await this.getFrameworkEntryQuery.execute({
+      const link = await this.addLinkCommand.execute({
         projectId: req.params.projectId,
         frameworkType,
-      });
-      const link = await this.linkRepo.create({
-        frameworkEntryId: entry.id,
         rawDataId: parsed.data.rawDataId,
         subElementId: parsed.data.subElementId,
         note: parsed.data.note,
@@ -197,6 +189,10 @@ export class FrameworkEntryController {
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ error: error.message });
+        return;
+      }
+      if (error instanceof Error && error.message === "Raw data does not belong to this project") {
+        res.status(400).json({ error: error.message });
         return;
       }
       res.status(500).json({ error: "Internal server error" });
@@ -213,21 +209,11 @@ export class FrameworkEntryController {
       return;
     }
     try {
-      // Verify the link belongs to the correct project's framework
-      const link = await this.linkRepo.findById(req.params.linkId);
-      if (!link) {
-        res.status(404).json({ error: "Link not found" });
-        return;
-      }
-      const entry = await this.getFrameworkEntryQuery.execute({
+      await this.deleteLinkCommand.execute({
         projectId: req.params.projectId,
         frameworkType,
+        linkId: req.params.linkId,
       });
-      if (link.frameworkEntryId !== entry.id) {
-        res.status(404).json({ error: "Link not found" });
-        return;
-      }
-      await this.linkRepo.delete(req.params.linkId);
       res.status(204).send();
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -248,11 +234,10 @@ export class FrameworkEntryController {
       return;
     }
     try {
-      const entry = await this.getFrameworkEntryQuery.execute({
+      const links = await this.listLinksQuery.execute({
         projectId: req.params.projectId,
         frameworkType,
       });
-      const links = await this.linkRepo.findByFrameworkEntry(entry.id);
       res.json(links);
     } catch (error) {
       if (error instanceof NotFoundError) {

@@ -28,6 +28,7 @@ describe("ListFrameworkVersionsQuery", () => {
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
       createNextVersion: vi.fn(),
+      upsertLatest: vi.fn(),
     };
     const query = new ListFrameworkVersionsQuery(repo);
 
@@ -52,6 +53,7 @@ describe("ListFrameworkVersionsQuery", () => {
       findLatestByProject: vi.fn(),
       getNextVersion: vi.fn(),
       createNextVersion: vi.fn(),
+      upsertLatest: vi.fn(),
     };
     const query = new ListFrameworkVersionsQuery(repo);
 

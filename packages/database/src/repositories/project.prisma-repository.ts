@@ -42,16 +42,11 @@ export class ProjectPrismaRepository
 
   async save(entity: ProjectEntity): Promise<void> {
     const data = this.toPersistence(entity);
-    if (!entity.id) {
-      // insert — Prisma will assign a cuid
-      await this.prisma.project.create({ data });
-    } else {
-      await this.prisma.project.upsert({
-        where: { id: entity.id },
-        create: { ...data, id: entity.id },
-        update: data,
-      });
-    }
+    await this.prisma.project.upsert({
+      where: { id: entity.id },
+      create: { ...data, id: entity.id },
+      update: data,
+    });
   }
 
   async delete(entity: ProjectEntity): Promise<void> {

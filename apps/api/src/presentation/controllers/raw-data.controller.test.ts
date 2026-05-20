@@ -112,6 +112,16 @@ describe("RawDataController", () => {
       expect(res.json).toHaveBeenCalledWith(items);
     });
 
+    it("returns 400 when type filter is invalid", async () => {
+      const req = makeReq({ projectId: "project-id" }, undefined, { type: "INVALID_TYPE" });
+      const res = mockResponse();
+
+      await controller.list(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(listRawDataQuery.execute).not.toHaveBeenCalled();
+    });
+
     it("returns 500 when the query throws", async () => {
       listRawDataQuery.execute.mockRejectedValue(new Error("DB error"));
       const req = makeReq({ projectId: "project-id" });
@@ -201,9 +211,7 @@ describe("RawDataController", () => {
 
   describe("update", () => {
     it("returns 200 with the updated raw data", async () => {
-      const current = makeRawDataDto();
       const dto = makeRawDataDto({ title: "Updated Title" });
-      getRawDataQuery.execute.mockResolvedValue(current);
       updateRawDataCommand.execute.mockResolvedValue(dto);
 
       const req = makeReq({ projectId: "project-id", id: "test-id" }, { title: "Updated Title" });
@@ -213,13 +221,14 @@ describe("RawDataController", () => {
 
       expect(updateRawDataCommand.execute).toHaveBeenCalledWith({
         id: "test-id",
+        projectId: "project-id",
         title: "Updated Title",
       });
       expect(res.json).toHaveBeenCalledWith(dto);
     });
 
     it("returns 404 when raw data is not found", async () => {
-      getRawDataQuery.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
+      updateRawDataCommand.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
 
       const req = makeReq({ projectId: "project-id", id: "missing-id" }, { title: "Updated" });
       const res = mockResponse();
@@ -227,12 +236,9 @@ describe("RawDataController", () => {
       await controller.update(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(updateRawDataCommand.execute).not.toHaveBeenCalled();
     });
 
     it("returns 400 when validation fails (empty title)", async () => {
-      getRawDataQuery.execute.mockResolvedValue(makeRawDataDto());
-
       const req = makeReq({ projectId: "project-id", id: "test-id" }, { title: "" });
       const res = mockResponse();
 
@@ -245,7 +251,6 @@ describe("RawDataController", () => {
 
   describe("delete", () => {
     it("returns 204 when raw data is deleted", async () => {
-      getRawDataQuery.execute.mockResolvedValue(makeRawDataDto());
       deleteRawDataCommand.execute.mockResolvedValue(undefined);
 
       const req = makeReq({ projectId: "project-id", id: "test-id" });
@@ -253,13 +258,16 @@ describe("RawDataController", () => {
 
       await controller.delete(req, res);
 
-      expect(deleteRawDataCommand.execute).toHaveBeenCalledWith({ id: "test-id" });
+      expect(deleteRawDataCommand.execute).toHaveBeenCalledWith({
+        id: "test-id",
+        projectId: "project-id",
+      });
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
     });
 
     it("returns 404 when raw data is not found", async () => {
-      getRawDataQuery.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
+      deleteRawDataCommand.execute.mockRejectedValue(new NotFoundError("RawData", "missing-id"));
 
       const req = makeReq({ projectId: "project-id", id: "missing-id" });
       const res = mockResponse();
@@ -267,7 +275,6 @@ describe("RawDataController", () => {
       await controller.delete(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(deleteRawDataCommand.execute).not.toHaveBeenCalled();
     });
   });
 });

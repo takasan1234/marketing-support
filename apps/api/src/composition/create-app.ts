@@ -23,6 +23,9 @@ import {
   CreateFrameworkVersionCommand,
   GetFrameworkEntryQuery,
   ListFrameworkVersionsQuery,
+  AddFrameworkRawDataLinkCommand,
+  DeleteFrameworkRawDataLinkCommand,
+  ListFrameworkRawDataLinksQuery,
 } from "../application";
 import { env } from "../infrastructure/env";
 
@@ -92,13 +95,17 @@ export function createApp(): express.Express {
   const createFrameworkVersion = new CreateFrameworkVersionCommand(frameworkEntryRepo);
   const getFrameworkEntry = new GetFrameworkEntryQuery(frameworkEntryRepo);
   const listFrameworkVersions = new ListFrameworkVersionsQuery(frameworkEntryRepo);
+  const addLink = new AddFrameworkRawDataLinkCommand(linkRepo, getRawData, getFrameworkEntry);
+  const deleteLink = new DeleteFrameworkRawDataLinkCommand(linkRepo, getFrameworkEntry);
+  const listLinks = new ListFrameworkRawDataLinksQuery(linkRepo, getFrameworkEntry);
   const frameworkController = new FrameworkEntryController(
     upsertFrameworkEntry,
     createFrameworkVersion,
     getFrameworkEntry,
     listFrameworkVersions,
-    linkRepo,
-    getRawData,
+    addLink,
+    deleteLink,
+    listLinks,
   );
 
   apiRouter.get("/projects/:projectId/frameworks/:frameworkType", frameworkController.getLatest);

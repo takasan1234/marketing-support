@@ -1,4 +1,4 @@
-import { IFrameworkEntryRepository, FrameworkEntryEntity, FrameworkType } from "@workspace/domain";
+import { IFrameworkEntryRepository, FrameworkType } from "@workspace/domain";
 import { BaseCommandUseCase } from "./base.command";
 import { FrameworkEntryDto, toFrameworkEntryDto } from "../dto/framework-entry.dto";
 
@@ -18,21 +18,12 @@ export class UpsertFrameworkEntryCommand extends BaseCommandUseCase<
   }
 
   async execute(input: UpsertFrameworkEntryInput): Promise<FrameworkEntryDto> {
-    const existing = await this.repo.findLatest(input.projectId, input.frameworkType);
-
-    if (existing) {
-      const updated = existing.updateData(input.data);
-      await this.repo.save(updated);
-      return toFrameworkEntryDto(updated);
-    } else {
-      const entity = FrameworkEntryEntity.create({
-        projectId: input.projectId,
-        frameworkType: input.frameworkType,
-        data: input.data,
-        note: input.note,
-      });
-      await this.repo.save(entity);
-      return toFrameworkEntryDto(entity);
-    }
+    const entity = await this.repo.upsertLatest(
+      input.projectId,
+      input.frameworkType,
+      input.data,
+      input.note,
+    );
+    return toFrameworkEntryDto(entity);
   }
 }

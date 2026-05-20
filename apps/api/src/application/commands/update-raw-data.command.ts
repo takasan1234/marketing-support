@@ -5,6 +5,7 @@ import { NotFoundError } from "../errors";
 
 type UpdateRawDataInput = {
   id: string;
+  projectId: string;
   title?: string;
   content?: string;
   sourceUrl?: string | null;
@@ -21,6 +22,9 @@ export class UpdateRawDataCommand extends BaseCommandUseCase<UpdateRawDataInput,
   async execute(input: UpdateRawDataInput): Promise<RawDataDto> {
     let entity = await this.repo.findById(input.id);
     if (!entity) {
+      throw new NotFoundError("RawData", input.id);
+    }
+    if (entity.projectId !== input.projectId) {
       throw new NotFoundError("RawData", input.id);
     }
 

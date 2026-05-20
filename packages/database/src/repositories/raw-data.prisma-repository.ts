@@ -92,15 +92,11 @@ export class RawDataPrismaRepository
 
   async save(entity: RawDataEntity): Promise<void> {
     const data = this.toPersistence(entity);
-    if (!entity.id) {
-      await this.prisma.rawData.create({ data });
-    } else {
-      await this.prisma.rawData.upsert({
-        where: { id: entity.id },
-        create: { ...data, id: entity.id },
-        update: data,
-      });
-    }
+    await this.prisma.rawData.upsert({
+      where: { id: entity.id },
+      create: { ...data, id: entity.id },
+      update: data,
+    });
   }
 
   async delete(entity: RawDataEntity): Promise<void> {

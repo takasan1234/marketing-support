@@ -115,15 +115,11 @@ export class FrameworkEntryPrismaRepository
 
   async save(entity: FrameworkEntryEntity): Promise<void> {
     const data = this.toPersistence(entity);
-    if (!entity.id) {
-      await this.prisma.frameworkEntry.create({ data });
-    } else {
-      await this.prisma.frameworkEntry.upsert({
-        where: { id: entity.id },
-        create: { ...data, id: entity.id },
-        update: data,
-      });
-    }
+    await this.prisma.frameworkEntry.upsert({
+      where: { id: entity.id },
+      create: { ...data, id: entity.id },
+      update: data,
+    });
   }
 
   async delete(entity: FrameworkEntryEntity): Promise<void> {
@@ -229,6 +225,47 @@ export class FrameworkEntryPrismaRepository
       });
 
       return this.toDomain(created);
+    });
+  }
+
+  async upsertLatest(
+    projectId: string,
+    frameworkType: FrameworkType,
+    data: Record<string, unknown>,
+    note?: string | null,
+  ): Promise<FrameworkEntryEntity> {
+    const prismaType = DOMAIN_TO_PRISMA_FRAMEWORK_TYPE[frameworkType];
+    return this.prisma.$transaction(async (tx) => {
+      const latest = await tx.frameworkEntry.findFirst({
+        where: {
+          projectId,
+          frameworkType: prismaType,
+          isLatest: true,
+        },
+      });
+
+      if (latest) {
+        const updated = await tx.frameworkEntry.update({
+          where: { id: latest.id },
+          data: {
+            data: data as Prisma.InputJsonValue,
+            note: note ?? null,
+          },
+        });
+        return this.toDomain(updated);
+      } else {
+        const created = await tx.frameworkEntry.create({
+          data: {
+            projectId,
+            frameworkType: prismaType,
+            version: 1,
+            isLatest: true,
+            data: data as Prisma.InputJsonValue,
+            note: note ?? null,
+          },
+        });
+        return this.toDomain(created);
+      }
     });
   }
 }
