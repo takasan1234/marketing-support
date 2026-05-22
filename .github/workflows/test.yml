@@ -42,8 +42,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
       - name: Run migrations
-        run: pnpm db:migrate
+        run: pnpm --filter @workspace/database prisma migrate deploy
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/marketing_support_test
 
