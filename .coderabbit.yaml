@@ -1,0 +1,201 @@
+# yaml-language-server: $schema=https://storage.googleapis.com/coderabbit_public_assets/schema.v2.json
+# CodeRabbit 設定 — https://docs.coderabbit.ai/reference/configuration
+# 変更時は @coderabbitai configuration で実効設定を確認できる。
+
+language: ja-JP
+early_access: false
+
+tone_instructions: |
+  日本語の敬体（です・ます調）で、簡潔・建設的に。
+  Prettier/ESLint で機械的に直る指摘（フォーマット・import 順・未使用変数）は省略し、
+  設計・正しさ・セキュリティ・保守性に絞ってコメントすること。
+
+reviews:
+  # スタイルは Prettier/ESLint・husky pre-commit と CI(lint.yml) で担保済みのため
+  # CodeRabbit は重要度の高い指摘に集中させる。
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: true
+  changed_files_summary: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  suggested_reviewers: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    # PR の base がこれらにマッチしたときのみ自動レビューする
+    base_branches:
+      - main
+      - develop
+    # 同一 PR への追加 push は差分のみレビュー
+    auto_incremental_review: true
+
+  # レビュー対象から除外するパス（!プレフィックス）
+  # ロックファイル・ビルド成果物・自動生成物・大容量バイナリ・計画資料を除外
+  path_filters:
+    - "!**/pnpm-lock.yaml"
+    - "!**/*.lock"
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.turbo/**"
+    - "!**/coverage/**"
+    - "!**/playwright-report/**"
+    - "!**/test-results/**"
+    - "!**/*.snap"
+    - "!**/*.min.*"
+    - "!**/*.generated.*"
+    - "!**/*.gen.ts"
+    - "!packages/database/src/generated/**"
+    - "!packages/database/prisma/migrations/**"
+    - "!**/*.pdf"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.webp"
+    - "!**/*.ico"
+    - "!**/*.svg"
+    - "!plan/**"
+    - "!.claude/**"
+
+  # 全ファイル共通の指示（CLAUDE.md と docs/architecture.md に準拠）
+  path_instructions:
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        - 依存方向は「外側 → 内側」であること。`packages/domain` から他パッケージへの import は禁止。
+        - 外部パッケージのインポートは各 package.json の公開エントリーポイント経由のみ許可。
+        `@workspace/<pkg>/src/**` への深い import は指摘すること。
+        - `any` / 非 null アサーション(`!`) / `as` の安易な使用、`process.env` の直接参照、
+        `console.log` の残置は指摘。`process.env` の代わりに `apps/api/src/infrastructure/env.ts` の
+        型付き `env` を使うこと。
+        - try-catch で例外を握りつぶしていないか確認する。
+
+    - path: "packages/domain/**"
+      instructions: |
+        Domain 層は最内層。以下を厳しめにチェック:
+        - 他パッケージ・外部ライブラリ（Prisma / Express / Zod 等）への依存が紛れ込んでいないか。
+        - エンティティの不変条件・整合性検証は Entity メソッド内で行われているか。
+        - ファイル命名: エンティティは `*.entity.ts`、値オブジェクトは `*.value-object.ts`、
+        リポジトリインターフェースは `*.repository.ts`。
+
+    - path: "packages/database/**"
+      instructions: |
+        - リポジトリ実装は `*.prisma-repository.ts`、読み取り専用は `query-services/*.query-service.ts`。
+        - Domain で定義された Repository インターフェースの契約を満たしているか確認。
+        - Query Service は読み取り専用 DTO を返し、Entity 復元は強制しない。
+        - N+1 / 不要な include / 巨大トランザクションが無いか確認。
+
+    - path: "apps/api/src/application/**"
+      instructions: |
+        CQRS の規律を確認:
+        - `commands/` は副作用あり。必要に応じて UseCase 内で `prisma.$transaction` を張ること。
+        - `queries/` は参照のみ。書き込み呼び出しが紛れていれば指摘。
+        - ファイル命名は `*.use-case.ts`。
+        - Response DTO の組み立てはこの層で行うこと（Presentation で組み立てない）。
+        - エラーは `apps/api/src/application/errors/` のドメイン/アプリケーションエラーとして表現すること。
+
+    - path: "apps/api/src/presentation/**"
+      instructions: |
+        - リクエスト境界では必ず Zod でバリデーションすること。型キャストのみで通すのは禁止。
+        - コントローラーは Application 層を呼ぶだけの薄い層に保つ。ビジネスロジックは指摘対象。
+        - Domain/Application エラーは HTTP ステータスへ正しくマッピングされているか確認。
+        - ファイル命名は `*.controller.ts`。
+
+    - path: "apps/api/src/infrastructure/**"
+      instructions: |
+        - `env.ts` は起動時に Zod 検証を通す。検証漏れの新規環境変数は指摘。
+        - Swagger は fail-fast。OpenAPI YAML 読み込み失敗時にサーバ起動を続行する実装は指摘。
+
+    - path: "apps/api/docs/openapi.yaml"
+      instructions: |
+        - API コントラクト。互換性破壊（パス変更・必須プロパティ追加・型変更）は明確に指摘。
+        - components/schemas, paths の責務分割が崩れていないか確認。
+
+    - path: "apps/web/**/*.{ts,tsx}"
+      instructions: |
+        - デフォルトは Server Component。`"use client"` はブラウザ API / state / effect が必要な時のみ、
+        ファイル先頭行に置くこと。
+        - `fetch` をコンポーネントに直接書かない。`apps/web/lib/` の API クライアント経由にすること。
+        - 色は CSS 変数トークン（`bg-primary`, `text-muted-foreground` 等）を使用。
+        ハードコード色（`text-red-500`, `bg-[#fff]`, インライン `style={{ ... }}`）は禁止。
+        - `packages/ui` からの import は `@workspace/ui/components/<name>` 等の公開パスのみ。
+        `@workspace/ui/src/**` への深い import は禁止。
+
+    - path: "packages/ui/**"
+      instructions: |
+        - 汎用 UI 部品のみ。アプリ固有の処理（API 呼び出し・ドメイン依存）は混入させない。
+        - 新規コンポーネントは原則 `pnpm dlx shadcn add <name> --cwd packages/ui` で追加する想定。
+        手書きで shadcn 由来コンポーネントを直接作成していたら指摘。
+        - デザイントークンは `src/styles/globals.css` に集約。
+
+    - path: "**/*.test.{ts,tsx}"
+      instructions: |
+        - テストは実装と co-located であること（`__tests__/` 等の独自階層は指摘）。
+        - 共通ヘルパーは `<app>/src/test-utils/` を使用しているか確認。
+        - 異常系・境界値のカバレッジ、不要な過剰モック、テスト同士の依存が無いか確認。
+
+    - path: "apps/web/tests/e2e/**"
+      instructions: |
+        - Playwright E2E は `apps/web/tests/e2e/` 配下に集約されているか確認。
+        - セレクタはユーザ視点（role/label 等）を優先し、実装詳細に依存するセレクタは指摘。
+
+    - path: "packages/database/prisma/schema.prisma"
+      instructions: |
+        - スキーマ変更時はマイグレーションが追随しているか確認。
+        - 破壊的変更（カラム削除・型変更）はダウンタイム/データ移行リスクを明示すること。
+
+    - path: ".github/workflows/**"
+      instructions: |
+        - secrets のハードコード・過剰権限（permissions: write-all 等）は指摘。
+        - actions は major タグ（@v4 等）または SHA で固定する。
+        - pnpm/Node のバージョンがリポジトリ（pnpm 9.15.9 / Node >=20）と整合しているか確認。
+
+    - path: "**/Dockerfile*"
+      instructions: |
+        - root ユーザーでの実行・最新タグ（`:latest`）の使用は指摘。
+        - マルチステージビルドで不要な依存が最終イメージに残っていないか確認。
+
+  # 言語・ツール別の自動チェック（CodeRabbit 内蔵）
+  tools:
+    # ESLint は CI(.github/workflows/lint.yml) で実行済みなので、PR 上の重複ノイズを避ける
+    eslint:
+      enabled: false
+    biome:
+      enabled: false
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    actionlint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    hadolint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    languagetool:
+      enabled: false
+    checkov:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto

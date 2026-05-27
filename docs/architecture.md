@@ -23,7 +23,7 @@
 ## 📂 フォルダ構造
 
 ```
-yomutan/
+marketing-support/
 ├── apps/
 │   ├── api/                          # Express バックエンド
 │   │   ├── docs/                     # OpenAPI 定義 (YAML)
