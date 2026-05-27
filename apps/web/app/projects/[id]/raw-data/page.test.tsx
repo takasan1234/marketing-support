@@ -10,10 +10,9 @@ import RawDataListPage from "./page";
 
 const projectId = "proj-1";
 
-async function renderPage(searchParams: { type?: string } = {}) {
+async function renderPage() {
   const ui = await RawDataListPage({
     params: Promise.resolve({ id: projectId }),
-    searchParams: Promise.resolve(searchParams),
   });
   return render(ui);
 }
@@ -32,7 +31,7 @@ describe("RawDataListPage", () => {
     await renderPage();
 
     expect(screen.getByText("生データがありません。")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "最初の生データを追加する" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "手動で追加" })).toHaveAttribute(
       "href",
       `/projects/${projectId}/raw-data/new`
     );
@@ -74,8 +73,11 @@ describe("RawDataListPage", () => {
 
     const row = screen.getByRole("link", { name: /観光統計2025/ });
     expect(row).toBeInTheDocument();
-    expect(row).toHaveTextContent("市場統計");
     expect(row).toHaveTextContent("鮮度良好");
+    // 種類ラベルは種類別グループの見出しに表示される
+    expect(
+      screen.getByRole("heading", { name: /市場統計/ })
+    ).toBeInTheDocument();
     expect(screen.queryByText("生データがありません。")).not.toBeInTheDocument();
   });
 });

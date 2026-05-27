@@ -29,10 +29,20 @@ tools: [WebSearch, WebFetch, Bash]
    - `projectId`: 対象プロジェクトのID
    - `type`: 収集する RawDataType
    - `topic`: 収集テーマ（例: 「国内SaaS市場規模」）
+   - `region`: 収集対象地域（`JP` / `GLOBAL` / 両方。既定は両方）
 
-2. **ソース探索**
-   - WebSearch で関連ソースを検索（3〜5件を目安）
-   - 検索クエリ例: `[topic] 統計 2024 site:gov.jp OR site:meti.go.jp`
+## 地域バランス方針
+
+- 既定では **日本（JP）とグローバル（GLOBAL）の両方** を収集する。
+- グローバルに偏って国内情報が不足したり、国内に偏って重要なグローバル情報が抜けたりしないよう、バランスを取る。
+- 各 RawData の保存時、`--tags` に **必ず地域タグを含める**:
+  - 日本国内ソース由来 → `region:JP`
+  - 海外/グローバルソース由来 → `region:GLOBAL`
+
+2. **ソース探索（JP / グローバル両方）**
+   - WebSearch で日本国内ソースとグローバルソースの両方を検索（各 3〜5件を目安）
+   - JP 用クエリ例: `[topic] 統計 2024 site:gov.jp OR site:meti.go.jp`
+   - グローバル用クエリ例: `[topic in English] market size 2024 statista OR gartner OR mckinsey`
 
 3. **コンテンツ取得**
    - WebFetch で各ソースの内容を取得
@@ -68,17 +78,18 @@ tools: [WebSearch, WebFetch, Bash]
    ```
 
 5. **DB保存**
+   `--tags` には地域タグ（`region:JP` または `region:GLOBAL`）を必ず含める。
    ```bash
    npx tsx .claude/scripts/save-raw-data.ts <projectId> \
      --type <TYPE> \
      --title "<タイトル>" \
      --content "<構造化されたコンテンツ>" \
      --source-url "<元URL>" \
-     --tags "<関連タグ（カンマ区切り）>"
+     --tags "region:JP,<関連タグ（カンマ区切り）>"
    ```
 
 6. **完了報告**
-   保存した RawData の ID とタイトルを返す。
+   保存した RawData の ID とタイトルを返す。JP / GLOBAL それぞれの保存件数も報告する。
 
 ## 例
 
@@ -89,19 +100,28 @@ tools: [WebSearch, WebFetch, Bash]
 
 ### 実行例
 ```bash
-# 1. 検索
+# 1. 検索（JP / グローバル両方）
 WebSearch: "国内クラウドサービス市場 規模 2024 統計"
+WebSearch: "global cloud services market size 2024 forecast"
 
 # 2. 取得
 WebFetch: https://www.soumu.go.jp/...
+WebFetch: https://www.gartner.com/...
 
-# 3. 保存
+# 3. 保存（地域タグを必ず付与）
 npx tsx .claude/scripts/save-raw-data.ts proj_abc123 \
   --type MARKET_STATS \
   --title "国内クラウドサービス市場規模 2024年版" \
   --content "市場規模: 1.2兆円（2024年）\n成長率: 18.5%（CAGR）\n..." \
   --source-url "https://www.soumu.go.jp/..." \
-  --tags "クラウド,SaaS,市場規模"
+  --tags "region:JP,クラウド,SaaS,市場規模"
+
+npx tsx .claude/scripts/save-raw-data.ts proj_abc123 \
+  --type MARKET_STATS \
+  --title "Global Cloud Services Market 2024" \
+  --content "Market size: \$XXXB (2024)\nCAGR: XX%\n..." \
+  --source-url "https://www.gartner.com/..." \
+  --tags "region:GLOBAL,cloud,SaaS,market-size"
 ```
 
 ## エラー時の対応

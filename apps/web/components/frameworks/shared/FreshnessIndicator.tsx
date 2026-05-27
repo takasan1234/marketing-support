@@ -1,4 +1,5 @@
 import { Badge } from "@workspace/ui/components/badge";
+import { FRESHNESS_LABELS, freshnessState } from "@/lib/raw-data";
 
 type FreshnessIndicatorProps = {
   expiresAt: string | null;
@@ -9,37 +10,31 @@ export function FreshnessIndicator({
   expiresAt,
   collectedAt,
 }: FreshnessIndicatorProps) {
-  if (!expiresAt) {
-    return <Badge variant="secondary">期限なし</Badge>;
+  const state = freshnessState(expiresAt, collectedAt);
+
+  if (state === "none") {
+    return <Badge variant="secondary">{FRESHNESS_LABELS.none}</Badge>;
   }
 
-  const nowTs = new Date().getTime();
-  const expiresTs = new Date(expiresAt).getTime();
-  const collectedTs = new Date(collectedAt).getTime();
-  const totalDuration = expiresTs - collectedTs;
-  const elapsed = nowTs - collectedTs;
-
-  if (nowTs >= expiresTs) {
+  if (state === "stale") {
     return (
       <Badge className="bg-destructive text-destructive-foreground hover:bg-destructive">
-        鮮度切れ
+        {FRESHNESS_LABELS.stale}
       </Badge>
     );
   }
 
-  const remainRatio = totalDuration > 0 ? 1 - elapsed / totalDuration : 1;
-
-  if (remainRatio >= 0.5) {
+  if (state === "fresh") {
     return (
       <Badge className="bg-green-600 text-primary-foreground hover:bg-green-700">
-        鮮度良好
+        {FRESHNESS_LABELS.fresh}
       </Badge>
     );
   }
 
   return (
     <Badge className="bg-yellow-500 text-primary-foreground hover:bg-yellow-600">
-      鮮度低下
+      {FRESHNESS_LABELS.soon}
     </Badge>
   );
 }
